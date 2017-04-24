@@ -1,22 +1,15 @@
 package com.example.mdjahirulislam.weatherapptest;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.MenuItemCompat;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -25,11 +18,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -37,29 +27,22 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
-public class MainActivity extends AppCompatActivity implements
+public class MainActivity extends AppCompatActivity implements MyItemClickListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
-        CurrentWeatherFragment.SendWeatherCondition,MyItemClickListener{
+        CurrentWeatherFragment.SendWeatherCondition{
 
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private ImageView imageCode;
     private String cityName="dhaka";
-    private String searchCountry="Dhaka";
-    private String searchCity="Dhaka";
+    private String currentCity = "Dhaka";
+    private String searchCity ="";
     private String date;
 
 
@@ -70,9 +53,6 @@ public class MainActivity extends AppCompatActivity implements
 
     private TabsPagerAdapter tabsPagerAdapter;
     private ViewPager viewPager;
-    private android.support.v7.app.ActionBar actionBar;
-    private Bundle bundle;
-    private CurrentWeatherFragment countryDetails;
     private LinearLayout linearLayout;
     private String toDayCondition;
     private TabLayout tabLayout;
@@ -111,11 +91,6 @@ public class MainActivity extends AppCompatActivity implements
                 .addOnConnectionFailedListener(this)
                 .build();
 
-//        googleApiClient.connect();
-//        getResponse(cityName);
-
-//        myItemClickListener = (MyItemClickListener) context;
-
         Log.d(TAG,"cityName "+cityName.toString());
 
 
@@ -134,37 +109,66 @@ public class MainActivity extends AppCompatActivity implements
         super.onPause();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                searchCountry=query;
-                searchCity=searchCountry;
-                Log.d(TAG,"search country : "+searchCity.toString());
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        MenuInflater inflater = getMenuInflater();
+//        inflater.inflate(R.menu.menu, menu);
+//        MenuItem searchItem = menu.findItem(R.id.action_search);
+//        SearchView searchView = (SearchView) searchItem.getActionView();
+//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+//            @Override
+//            public boolean onQueryTextSubmit(String query) {
+//                searchCity = query;
+//                currentCity = searchCity;
+//                Log.d(TAG,"search country : "+currentCity);
+//                viewPager.setAdapter(tabsPagerAdapter);
+//                tabLayout.setupWithViewPager(viewPager);
+//                return true;
+//
+//            }
+//
+//            @Override
+//            public boolean onQueryTextChange(String newText) {
+//                return false;
+//            }
+//        });
+//        return super.onCreateOptionsMenu(menu);
+//    }
+@Override
+public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.menu, menu);
+    MenuItem item = menu.findItem(R.id.action_search);
+//    SearchView searchView = (SearchView) item.getActionView();
+    android.widget.SearchView searchView = (android.widget.SearchView) item.getActionView();
+    searchView.setOnQueryTextListener(new android.widget.SearchView.OnQueryTextListener() {
+        @Override
+        public boolean onQueryTextSubmit(String query) {
+                searchCity = query;
+                currentCity = searchCity;
+                Log.d(TAG,"search country : "+currentCity);
+            Toast.makeText(MainActivity.this, ""+currentCity, Toast.LENGTH_SHORT).show();
                 viewPager.setAdapter(tabsPagerAdapter);
                 tabLayout.setupWithViewPager(viewPager);
-                return true;
+            return false;
+        }
 
-            }
+        @Override
+        public boolean onQueryTextChange(String newText) {
+            return false;
+        }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
-        return super.onCreateOptionsMenu(menu);
+
+    });
+
+    return super.onCreateOptionsMenu(menu);
     }
 
 
     @Override
     public String getCountry() {
-        Log.d("Enu",searchCity);
-        return searchCity;
+        Log.d("currentCity ",currentCity);
+        return currentCity;
     }
 
     @Override
@@ -198,10 +202,6 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-
-//        latitudeTV.setText("Latitude : "+String.valueOf(location.getLatitude()));
-//        longitudeTV.setText("Longitude : "+String.valueOf(location.getLongitude()));
-
         try {
             addressList = geocoder.getFromLocation(location.getLatitude(),location.getLongitude(),1);
 
@@ -216,22 +216,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-//    @Override
-//    public void getCountry(String item) {
-//        FragmentManager fm = getSupportFragmentManager();
-//        FragmentTransaction ft = fm.beginTransaction();
-//        CurrentWeatherFragment countryDetails = new CurrentWeatherFragment();
-//
-//        Bundle bundle = new Bundle();
-//        bundle.putString("cName",searchCountry);
-//        countryDetails.setArguments(bundle);
-//
-//        ft.replace(R.id.pager,countryDetails);
-//        ft.addToBackStack(null);
-//        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-//        ft.commit();
-//    }
-
     @Override
     public Void getWeatherCondition(String condition) {
 
@@ -241,7 +225,7 @@ public class MainActivity extends AppCompatActivity implements
         this.toDayCondition = condition;
 
         if (toDayCondition.equals("Thunderstorms")) {
-            linearLayout.setBackground(getResources().getDrawable(R.drawable.thunderstorm));
+            linearLayout.setBackground(getResources().getDrawable(R.drawable.black_bg));
 
 
         }
